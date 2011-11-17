@@ -155,13 +155,15 @@ public class EntrenaOido {
 				Thread.currentThread().sleep(duracion);
 				mc[0].allNotesOff();
 				opcion = leerStdin("Pulse [R] para repetir, [S] para siguiente u otra tecla para salir\n");
-				if ("S".equalsIgnoreCase(opcion)) {
-					nota = siguienteNota();
+				if (!"R".equalsIgnoreCase(opcion)) {
 					t = System.currentTimeMillis() - t;
 					if (tMax == 0 || tMax < t)
 						tMax = t;
 					if (tMin == 0 || tMin > t)
 						tMin = t;
+				}
+				if ("S".equalsIgnoreCase(opcion)) {
+					nota = siguienteNota();
 					System.out.println("Nº ejecuciones: " + ++numEjecuciones + "; tiempo: " + descripcionTiempo(System.currentTimeMillis() - tiempo));
 				} else if ("R".equalsIgnoreCase(opcion)) {
 					numRepeticiones++;
