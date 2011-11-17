@@ -146,7 +146,7 @@ public class EntrenaOido {
 			boolean finalizado = false;
 			int nota = siguienteNota();
 			String opcion;
-			long numEjecuciones = 0, numRepeticiones = 0;
+			long numEjecuciones = 1, numRepeticiones = 0;
 			long tiempo = System.currentTimeMillis();
 			long tMax = 0, tMin = 0;
 			while (!finalizado) {
