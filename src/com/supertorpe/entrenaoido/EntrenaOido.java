@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.*;
 
@@ -43,7 +44,7 @@ public class EntrenaOido {
 	}
 
 	private static String leerParametro(String paramName,
-			Properties properties, boolean required) throws Exception {
+		Properties properties, boolean required) throws Exception {
 		String result = System.getProperty(paramName);
 		if (esCadenaVacia(result))
 			result = properties.getProperty(paramName);
@@ -124,6 +125,13 @@ public class EntrenaOido {
 	    return linea;
 	}
 	
+	private static String descripcionTiempo(long millis) {
+		return String.format("%d min, %d seg", 
+			    TimeUnit.MILLISECONDS.toMinutes(millis),
+			    TimeUnit.MILLISECONDS.toSeconds(millis) - 
+			    TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
+	}
+	
 	private static void ejecutar() throws Exception {
 		MidiDevice.Info[] devices = MidiSystem.getMidiDeviceInfo();
 		if (devices.length == 0)
@@ -136,19 +144,39 @@ public class EntrenaOido {
 			MidiChannel[] mc = synth.getChannels();
 			mc[0].programChange(instrumento);
 			boolean finalizado = false;
-			boolean repetir = false;
 			int nota = siguienteNota();
 			String opcion;
+			long numEjecuciones = 0, numRepeticiones = 0;
+			long tiempo = System.currentTimeMillis();
+			long tMax = 0, tMin = 0;
 			while (!finalizado) {
+				long t = System.currentTimeMillis();
 				mc[0].noteOn(nota, volumen);
 				Thread.currentThread().sleep(duracion);
 				mc[0].allNotesOff();
 				opcion = leerStdin("Pulse [R] para repetir, [S] para siguiente u otra tecla para salir\n");
-				if ("S".equalsIgnoreCase(opcion))
+				if ("S".equalsIgnoreCase(opcion)) {
 					nota = siguienteNota();
-				else if (!"R".equalsIgnoreCase(opcion))
+					t = System.currentTimeMillis() - t;
+					if (tMax == 0 || tMax < t)
+						tMax = t;
+					if (tMin == 0 || tMin > t)
+						tMin = t;
+					System.out.println("Nº ejecuciones: " + ++numEjecuciones + "; tiempo: " + descripcionTiempo(System.currentTimeMillis() - tiempo));
+				} else if ("R".equalsIgnoreCase(opcion)) {
+					numRepeticiones++;
+				} else {
 					break;
+				}
 			}
+			tiempo = System.currentTimeMillis() - tiempo;
+			System.out.println("Resultados:");
+			System.out.println("  - Nº Ejecuciones: " + numEjecuciones);
+			System.out.println("  - Nº Repeticiones: " + numRepeticiones);
+			System.out.println("  - Tiempo total: " + descripcionTiempo(tiempo));
+			System.out.println("  - Tiempo medio: " + descripcionTiempo(tiempo / numEjecuciones));
+			System.out.println("  - Tiempo máximo: " + descripcionTiempo(tMax));
+			System.out.println("  - Tiempo mínimo: " + descripcionTiempo(tMin));
 		} finally {
 			synth.close();
 		}
