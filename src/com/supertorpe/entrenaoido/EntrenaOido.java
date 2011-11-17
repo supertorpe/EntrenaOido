@@ -65,7 +65,10 @@ public class EntrenaOido {
 				currentIndex = 0;
 			idx = currentIndex;
 		} else {
-			idx = rnd.nextInt(valoresNotasCandidatas.size());
+			do {
+				idx = rnd.nextInt(valoresNotasCandidatas.size());
+			} while (idx == currentIndex);
+			currentIndex = idx;
 		}
 		if (mostrarNota)
 			System.out.println(notasCandidatas.get(idx));
