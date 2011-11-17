@@ -1,0 +1,17 @@
+DESCRIPCION
+
+EntrenaOido es una sencilla utilidad que ayuda en el entrenamiento
+auditivo mediante la emisión de tonos.
+
+CONFIGURACION
+
+Se configura mediante un fichero de propiedades (EntrenaOido.properties)
+que es autoexplicativo.
+También se puede configurar mediante argumentos en la línea de comandos,
+teniendo estos prevalencia sobre los del fichero de configuración.
+
+EJECUCION
+
+./run.sh
+
+./run.sh -Dinstrumento=10 -Dvolumen=80
