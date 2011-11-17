@@ -15,7 +15,7 @@ import javax.sound.midi.*;
 
 public class EntrenaOido {
 	
-	private static final List<Character> NOTAS = Arrays.asList( 'C', 'D', 'E', 'F', 'G', 'A', 'B' );
+	private static final List<String> NOTAS = Arrays.asList( "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" );
 	private static final int TONOS_OCTAVA = 12;
 	private static final int NOTA_C0 = 24;
 
@@ -38,7 +38,7 @@ public class EntrenaOido {
 	private static int currentIndex = 0;
 	private static Random rnd = new Random();
 	
-	private static final int calcularValorNota(char nota, int octava) {
+	private static final int calcularValorNota(String nota, int octava) {
 		return NOTA_C0 + octava * TONOS_OCTAVA + NOTAS.indexOf(nota);
 	}
 
@@ -108,8 +108,8 @@ public class EntrenaOido {
 		mostrarNota = Boolean.parseBoolean(sMostrarNota);
 		String[] notas = leerParametro(PARAM_NOTAS, prop, true).split(",");
 		for (String nota : notas) {
-			char nombreNota = nota.charAt(0);
-			int octavaNota = Integer.parseInt(nota.substring(1));
+			String nombreNota = nota.substring(0, nota.length() - 1);
+			int octavaNota = Integer.parseInt(nota.substring(nota.length() - 1));
 			int valorNota = calcularValorNota(nombreNota, octavaNota);
 			notasCandidatas.add(nota);
 			valoresNotasCandidatas.add(valorNota);
