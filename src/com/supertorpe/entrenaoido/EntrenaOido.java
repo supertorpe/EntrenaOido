@@ -18,10 +18,12 @@ public class EntrenaOido {
 	
 	private static final List<String> NOTAS = Arrays.asList( "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" );
 	private static final int TONOS_OCTAVA = 12;
-	private static final int NOTA_C0 = 24;
+	private static final int NOTA_C0 = 12;
 
 	private static final String PARAM_NOTAS = "notas";
 	private static final String PARAM_MODO = "modo";
+	private static final String PARAM_EJERCICIO = "ejercicio";
+	private static final String PARAM_INTERVALO = "intervalo.tipo";
 	private static final String PARAM_INSTRUMENTO = "instrumento";
 	private static final String PARAM_DURACION = "duracion";
 	private static final String PARAM_VOLUMEN = "volumen";
@@ -30,13 +32,15 @@ public class EntrenaOido {
 	// Parámetros de ejecución
 	protected static int instrumento;
 	protected static boolean secuencial;
+	protected static String ejercicio;
+	protected static int intervalo;
 	protected static int duracion;
 	protected static int volumen;
 	protected static boolean mostrarNota;
 	private static List<String> notasCandidatas = new ArrayList<String>();
 	private static List<Integer> valoresNotasCandidatas = new ArrayList<Integer>();
 
-	private static int currentIndex = 0;
+	private static int currentIndex = -1;
 	private static Random rnd = new Random();
 	
 	private static final int calcularValorNota(String nota, int octava) {
@@ -74,6 +78,10 @@ public class EntrenaOido {
 			System.out.println(notasCandidatas.get(idx));
 		return valoresNotasCandidatas.get(idx);
 	}
+
+	private static int siguienteNotaIntervalo() {
+		return valoresNotasCandidatas.get(currentIndex) + intervalo;
+	}
 	
 	public static void main(String[] args) throws Exception {
 		try {
@@ -102,6 +110,11 @@ public class EntrenaOido {
 		// Leer la configuración, dando prioridad a los parámetros de la JVM
 		String sModo = leerParametro(PARAM_MODO, prop, true);
 		secuencial = "SECUENCIAL".equals(sModo);
+		ejercicio = leerParametro(PARAM_EJERCICIO, prop, true);
+		if ("INTERVALO".equals(ejercicio)) {
+			String sIntervalo = leerParametro(PARAM_INTERVALO, prop, true);
+			intervalo = Integer.parseInt(sIntervalo);
+		}
 		String sInstrumento = leerParametro(PARAM_INSTRUMENTO, prop, true);
 		instrumento = Integer.parseInt(sInstrumento);
 		String sDuracion = leerParametro(PARAM_DURACION, prop, true);
@@ -152,6 +165,7 @@ public class EntrenaOido {
 			long numEjecuciones = 1, numRepeticiones = 0;
 			long tiempo = System.currentTimeMillis();
 			long tMax = 0, tMin = 0;
+			boolean nuevoIntervalo = true;
 			while (!finalizado) {
 				long t = System.currentTimeMillis();
 				mc[0].noteOn(nota, volumen);
@@ -166,8 +180,14 @@ public class EntrenaOido {
 						tMin = t;
 				}
 				if ("S".equalsIgnoreCase(opcion)) {
-					nota = siguienteNota();
-					System.out.println("Nº ejecuciones: " + ++numEjecuciones + "; tiempo: " + descripcionTiempo(System.currentTimeMillis() - tiempo));
+					if ("INTERVALO".equals(ejercicio) && nuevoIntervalo) {
+						nota = siguienteNotaIntervalo();
+						nuevoIntervalo = false;
+					} else {
+						nuevoIntervalo = true;
+						nota = siguienteNota();
+						System.out.println("Nº ejecuciones: " + ++numEjecuciones + "; tiempo: " + descripcionTiempo(System.currentTimeMillis() - tiempo));
+					}
 				} else if ("R".equalsIgnoreCase(opcion)) {
 					numRepeticiones++;
 				} else {
