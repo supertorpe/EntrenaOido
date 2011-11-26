@@ -6,20 +6,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import javax.sound.midi.*;
-
 public class EntrenaOido {
 	
-	private static final List<String> NOTAS = Arrays.asList( "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" );
-	private static final int TONOS_OCTAVA = 12;
-	private static final int NOTA_C0 = 12;
-
 	private static final String PARAM_NOTAS = "notas";
 	private static final String PARAM_MODO = "modo";
 	private static final String PARAM_EJERCICIO = "ejercicio";
@@ -37,16 +30,13 @@ public class EntrenaOido {
 	protected static int duracion;
 	protected static int volumen;
 	protected static boolean mostrarNota;
-	private static List<String> notasCandidatas = new ArrayList<String>();
-	private static List<Integer> valoresNotasCandidatas = new ArrayList<Integer>();
+	private static List<List<Nota>> notasCandidatas = new ArrayList<List<Nota>>();
 
 	private static int currentIndex = -1;
 	private static Random rnd = new Random();
 	
-	private static final int calcularValorNota(String nota, int octava) {
-		return NOTA_C0 + octava * TONOS_OCTAVA + NOTAS.indexOf(nota);
-	}
-
+	private static Sintetizador sintetizador;
+	
 	private static String leerParametro(String paramName,
 		Properties properties, boolean required) throws Exception {
 		String result = System.getProperty(paramName);
@@ -61,28 +51,24 @@ public class EntrenaOido {
 		return (cadena == null || cadena.trim().length() == 0);
 	}
 	
-	private static int siguienteNota() {
+	private static List<Nota> siguiente() {
 		int idx;
 		if (secuencial) {
 			currentIndex++;
-			if (currentIndex >= valoresNotasCandidatas.size())
+			if (currentIndex >= notasCandidatas.size())
 				currentIndex = 0;
 			idx = currentIndex;
 		} else {
 			do {
-				idx = rnd.nextInt(valoresNotasCandidatas.size());
+				idx = rnd.nextInt(notasCandidatas.size());
 			} while (idx == currentIndex);
 			currentIndex = idx;
 		}
 		if (mostrarNota)
 			System.out.println(notasCandidatas.get(idx));
-		return valoresNotasCandidatas.get(idx);
+		return notasCandidatas.get(idx);
 	}
 
-	private static int siguienteNotaIntervalo() {
-		return valoresNotasCandidatas.get(currentIndex) + intervalo;
-	}
-	
 	public static void main(String[] args) throws Exception {
 		try {
 			cargarConfiguracion(args);
@@ -93,7 +79,7 @@ public class EntrenaOido {
 	}
 	
 	protected static void cargarConfiguracion(String[] args) throws Exception {
-		String cfgFile = "EntrenaOido.properties";
+		String cfgFile = "/home/ercilla/workspace/EntrenaOido/dist/EntrenaOido.properties";
 		// Si no se encuentra el fichero, buscarlo en el classpath
 		if (!FileUtil.esFicheroLectura(cfgFile)) {
 			String filename = FileUtil.searchFile(cfgFile);
@@ -123,13 +109,13 @@ public class EntrenaOido {
 		volumen = Integer.parseInt(sVolumen);
 		String sMostrarNota = leerParametro(PARAM_MOSTRAR_NOTA, prop, true);
 		mostrarNota = Boolean.parseBoolean(sMostrarNota);
-		String[] notas = leerParametro(PARAM_NOTAS, prop, true).split(",");
-		for (String nota : notas) {
-			String nombreNota = nota.substring(0, nota.length() - 1);
-			int octavaNota = Integer.parseInt(nota.substring(nota.length() - 1));
-			int valorNota = calcularValorNota(nombreNota, octavaNota);
-			notasCandidatas.add(nota);
-			valoresNotasCandidatas.add(valorNota);
+		String[] grupos = leerParametro(PARAM_NOTAS, prop, true).split(" ");
+		for (String grupo : grupos) {
+			List<Nota> lista = new ArrayList<Nota>();
+			notasCandidatas.add(lista);
+			String[] notas = grupo.split(",");
+			for (String nota : notas)
+				lista.add(new Nota(nota));
 		}
 	}
 	
@@ -149,28 +135,19 @@ public class EntrenaOido {
 	}
 	
 	private static void ejecutar() throws Exception {
-		MidiDevice.Info[] devices = MidiSystem.getMidiDeviceInfo();
-		if (devices.length == 0)
-			throw new Exception("No se han encontrado dispositivos MIDI");
-		Synthesizer synth = MidiSystem.getSynthesizer();
-		synth.open();
-		try {		
-			Instrument[] instr = synth.getDefaultSoundbank().getInstruments();
-			synth.loadInstrument(instr[instrumento]);
-			MidiChannel[] mc = synth.getChannels();
-			mc[0].programChange(instrumento);
+		sintetizador = new Sintetizador(instrumento);
+		try {
 			boolean finalizado = false;
-			int nota = siguienteNota();
+			List<Nota> grupo = siguiente();
 			String opcion;
 			long numEjecuciones = 1, numRepeticiones = 0;
 			long tiempo = System.currentTimeMillis();
 			long tMax = 0, tMin = 0;
 			boolean nuevoIntervalo = true;
+			int intvlo = 0;
 			while (!finalizado) {
 				long t = System.currentTimeMillis();
-				mc[0].noteOn(nota, volumen);
-				Thread.currentThread().sleep(duracion);
-				mc[0].allNotesOff();
+				sintetizador.sonar(grupo, duracion, volumen, intvlo);
 				opcion = leerStdin("Pulse [R] para repetir, [S] para siguiente u otra tecla para salir\n");
 				if (!"R".equalsIgnoreCase(opcion)) {
 					t = System.currentTimeMillis() - t;
@@ -181,11 +158,12 @@ public class EntrenaOido {
 				}
 				if ("S".equalsIgnoreCase(opcion)) {
 					if ("INTERVALO".equals(ejercicio) && nuevoIntervalo) {
-						nota = siguienteNotaIntervalo();
+						intvlo = intervalo;
 						nuevoIntervalo = false;
 					} else {
+						intvlo = 0;
 						nuevoIntervalo = true;
-						nota = siguienteNota();
+						grupo = siguiente();
 						System.out.println("Nº ejecuciones: " + ++numEjecuciones + "; tiempo: " + descripcionTiempo(System.currentTimeMillis() - tiempo));
 					}
 				} else if ("R".equalsIgnoreCase(opcion)) {
@@ -203,7 +181,7 @@ public class EntrenaOido {
 			System.out.println("  - Tiempo máximo: " + descripcionTiempo(tMax));
 			System.out.println("  - Tiempo mínimo: " + descripcionTiempo(tMin));
 		} finally {
-			synth.close();
+			sintetizador.close();
 		}
 	}
 
