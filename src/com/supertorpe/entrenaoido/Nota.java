@@ -37,5 +37,9 @@ public class Nota {
 	public int getTono() {
 		return calcularTono(nombre, octava);
 	}
+	public String toString() {
+		return nombre + octava;
+		
+	}
 
 }

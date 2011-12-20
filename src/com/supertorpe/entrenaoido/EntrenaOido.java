@@ -79,7 +79,7 @@ public class EntrenaOido {
 	}
 	
 	protected static void cargarConfiguracion(String[] args) throws Exception {
-		String cfgFile = "/home/ercilla/workspace/EntrenaOido/dist/EntrenaOido.properties";
+		String cfgFile = "EntrenaOido.properties";
 		// Si no se encuentra el fichero, buscarlo en el classpath
 		if (!FileUtil.esFicheroLectura(cfgFile)) {
 			String filename = FileUtil.searchFile(cfgFile);
