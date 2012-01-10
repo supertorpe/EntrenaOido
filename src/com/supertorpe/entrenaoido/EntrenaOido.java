@@ -26,7 +26,7 @@ public class EntrenaOido {
 	protected static int instrumento;
 	protected static boolean secuencial;
 	protected static String ejercicio;
-	protected static int intervalo;
+	protected static List<Integer> intervalos;
 	protected static int duracion;
 	protected static int volumen;
 	protected static boolean mostrarNota;
@@ -98,8 +98,10 @@ public class EntrenaOido {
 		secuencial = "SECUENCIAL".equals(sModo);
 		ejercicio = leerParametro(PARAM_EJERCICIO, prop, true);
 		if ("INTERVALO".equals(ejercicio)) {
-			String sIntervalo = leerParametro(PARAM_INTERVALO, prop, true);
-			intervalo = Integer.parseInt(sIntervalo);
+			String[] sIntervalos = leerParametro(PARAM_INTERVALO, prop, true).split(",");
+			intervalos = new ArrayList<Integer>();
+			for (String sIntervalo : sIntervalos)
+				intervalos.add(new Integer(sIntervalo));
 		}
 		String sInstrumento = leerParametro(PARAM_INSTRUMENTO, prop, true);
 		instrumento = Integer.parseInt(sInstrumento);
@@ -145,6 +147,7 @@ public class EntrenaOido {
 			long tMax = 0, tMin = 0;
 			boolean nuevoIntervalo = true;
 			int intvlo = 0;
+			int idxIntvlo = 0;
 			while (!finalizado) {
 				long t = System.currentTimeMillis();
 				sintetizador.sonar(grupo, duracion, volumen, intvlo);
@@ -158,10 +161,12 @@ public class EntrenaOido {
 				}
 				if ("S".equalsIgnoreCase(opcion)) {
 					if ("INTERVALO".equals(ejercicio) && nuevoIntervalo) {
-						intvlo = intervalo;
-						nuevoIntervalo = false;
+						intvlo = intvlo + intervalos.get(idxIntvlo);
+						idxIntvlo++;
+						nuevoIntervalo = (idxIntvlo < intervalos.size());
 					} else {
 						intvlo = 0;
+						idxIntvlo = 0;
 						nuevoIntervalo = true;
 						grupo = siguiente();
 						System.out.println("Nº ejecuciones: " + ++numEjecuciones + "; tiempo: " + descripcionTiempo(System.currentTimeMillis() - tiempo));

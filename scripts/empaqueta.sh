@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # variables a configurar
-VERSION=0.6
+VERSION=0.7
 JAVA_HOME=/usr/lib/jvm/java-6-sun
 
 # otras variables
